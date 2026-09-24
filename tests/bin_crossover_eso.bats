@@ -157,7 +157,12 @@ setup() {
   [[ "$output" == *"eso start"* ]]
   [[ "$output" == *"Steam + TTC started"* ]]
   [[ "$output" == *"Mac helper"* ]] || [[ "$output" == *"Tamriel Trade Centre"* ]]
-  [[ -s "$open_log" ]]
+  # Darwin uses `open -a` for the Mac helper; Linux takes the detached-wine path.
+  if [[ "$(uname -s)" == "Darwin" ]]; then
+    [[ -s "$open_log" ]]
+  else
+    [[ "$output" == *"detached wine"* ]]
+  fi
 }
 
 @test "crossover eso launch ttc fails when Client.exe missing" {

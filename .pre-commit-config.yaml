@@ -13,21 +13,15 @@ repos:
       - id: check-executables-have-shebangs
       - id: check-shebang-scripts-are-executable
 
-  - repo: https://github.com/koalaman/shellcheck-precommit
-    rev: v0.11.0
-    hooks:
-      - id: shellcheck
-        files: ^(bin|lib|scripts)/
-
-  - repo: https://github.com/scop/pre-commit-shfmt
-    rev: v3.13.1-1
-    hooks:
-      - id: shfmt
-        args: [-w, -i=2, -ci]
-        files: ^(bin|lib|scripts|tests)/
-
+  # System shellcheck (not koalaman/shellcheck-precommit Docker) so CI/macOS
+  # runners work without Docker. Install: brew/apt install shellcheck.
   - repo: local
     hooks:
+      - id: shellcheck
+        name: ShellCheck
+        entry: shellcheck -x
+        language: system
+        files: ^(bin|lib|scripts)/
       - id: bats
         name: bats (pre-push)
         entry: bash -c 'command -v bats >/dev/null && bats tests/ || echo "bats not installed; skip pre-push hook"'
@@ -35,3 +29,10 @@ repos:
         pass_filenames: false
         always_run: true
         stages: [pre-push]
+
+  - repo: https://github.com/scop/pre-commit-shfmt
+    rev: v3.13.1-1
+    hooks:
+      - id: shfmt
+        args: [-w, -i=2, -ci]
+        files: ^(bin|lib|scripts|tests)/

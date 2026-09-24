@@ -16,6 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # macOS is the CrossOver target; Ubuntu covers portable bash unit tests.
         os: [ubuntu-latest, macos-latest]
 
     steps:
@@ -40,7 +41,7 @@ jobs:
             sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
           fi
 
-      - name: Install shellcheck and shfmt
+      - name: Install shellcheck, shfmt, and bats
         run: |
           if [[ "${{ runner.os }}" == "macOS" ]]; then
             brew install shellcheck shfmt bats-core
@@ -49,6 +50,7 @@ jobs:
             sudo apt-get install -y shellcheck shfmt bats
           fi
 
+      # ShellCheck hook uses system `shellcheck` (no Docker). Ensure it is on PATH.
       - name: Pre-commit
         run: uv run pre-commit run --all-files
 
