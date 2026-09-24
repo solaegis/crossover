@@ -7,7 +7,7 @@ Bash scripts for **CodeWeavers CrossOver** bottles on macOS. Each **recipe** (su
 | Recipe | Bottle | Description |
 |--------|--------|-------------|
 | `eso` | `The Elder Scrolls Online (Steam)` | Steam + Elder Scrolls Online + Minion + TTC |
-| `dune` | `Dune: Awakening (Steam)` | Steam + Dune: Awakening + BattlEye repair |
+| `dune` | `Dune Awakening (Steam)` | Steam + Dune: Awakening + BattlEye repair |
 
 ## Prerequisites
 
@@ -45,42 +45,47 @@ bin/crossover dune doctor
 
 ## Dune: Awakening recipe (`crossover dune`)
 
-BattlEye-protected multiplayer survival game (Steam AppID **1172710**). CodeWeavers rates it [Installs, Will Not Run](https://www.codeweavers.com/compatibility/crossover/dune-awakening); this recipe automates user-mode BattlEye repair and bottle tuning but **cannot guarantee** kernel-level anti-cheat will pass.
+BattlEye-protected multiplayer survival game (Steam AppID **1172710**). CodeWeavers rates it [Installs, Will Not Run](https://www.codeweavers.com/compatibility/crossover/dune-awakening). This recipe automates user-mode BattlEye repair and bottle tuning; it **cannot** load BattlEye’s Windows kernel driver.
+
+> **Hard stop — Driver Load Error (1053)**
+> If BattlEye Launcher shows `Failed to initialize BattlEye Service: Driver Load Error (1053)`, CrossOver has hit the ceiling. That is BE’s **kernel** driver (`BEDaisy`) failing under Wine — expected on macOS.
+> **Does not help:** VPN, `task dune:fix-battleye`, Proton BattlEye Runtime, graphics/sync tweaks, or launching without the BE wrapper (online still requires BE).
+> **Real options:** Funcom single-player if/when it ships without BE; Windows 11 ARM (Parallels) or cloud/remote Windows for native BattlEye (Parallels may still block on DX12).
 
 | Component | In bottle? | How |
 |-----------|------------|-----|
-| **Steam** | Yes | CrossOver GUI — open `ties/dune_steam.tie` (bottle **Dune: Awakening (Steam)**) or install “Steam” and Edit the bottle name to match |
+| **Steam** | Yes | CrossOver GUI — open `ties/dune_steam.tie` (bottle **Dune Awakening (Steam)**; CrossOver strips `:`) or install “Steam” and Edit the bottle name to match |
 | **Dune: Awakening** | Yes | Install via Steam; ~44 GB |
-| **BattlEye** | Yes | `task dune:fix-battleye` resets cache, reinstalls BE, starts BEService |
+| **BattlEye** | Partial | `task dune:fix-battleye` resets cache, registers **user-mode** BEService; **kernel driver will not load** (see 1053 above) |
 
 ```bash
-export CROSSOVER_BOTTLE="Dune: Awakening (Steam)"   # also the default
+export CROSSOVER_BOTTLE="Dune Awakening (Steam)"   # also the default (no colon)
 task dune:configure      # ROSETTA_ADVERTISE_AVX=1 on Apple Silicon
-task dune:fix-battleye   # repair "Updating…" hang
+task dune:fix-battleye   # repair "Updating…" hang / (4, 40000430)
 task dune:launch:game    # launch via DuneSandbox_BE.exe
 task dune:doctor
 ```
 
 **CrossOver GUI (manual):** bottle Settings → **Graphics: D3DMetal**, **Sync: MSync**.
 
-**If BattlEye still hangs on "Updating…":**
+**If BattlEye hangs on "Updating…"** (not 1053):
 
 1. `task dune:fix-battleye -- --full-reset` (removes game `BattlEye/` — **pauses here on purpose**)
 2. `task dune:verify-steam` (or Steam → Verify integrity manually)
 3. `task dune:fix-battleye` again
-4. Optional: connect a **VPN** during first BE **update** (if stuck on "Updating…"), disconnect after it passes
+4. Optional: connect a **VPN** during first BE **update**, disconnect after it passes
 
-**`(4, 40000430)` on service install:** BattlEye's GUI installer often fails under CrossOver/Wine. Run `task dune:fix-battleye` — it registers **BEService** via `sc.exe` instead. VPN does not fix this error.
+**`(4, 40000430)` on service install:** BattlEye's GUI installer often fails under CrossOver/Wine. Run `task dune:fix-battleye` — it registers **BEService** via `sc.exe` instead. VPN does not fix this error. This is separate from **1053**.
 
 **Does not help on macOS:** Proton BattlEye Runtime (Steam Tools, App 1161040) — Linux/Proton only.
 
-**Fallbacks if multiplayer still blocked:** Funcom's announced single-player mode (may bypass BE); Windows 11 ARM VM (Parallels) for native BattlEye.
+**Fallbacks if multiplayer still blocked (including after 1053):** Funcom's announced single-player mode (may bypass BE); Windows 11 ARM VM (Parallels) or cloud Windows for native BattlEye.
 
 ## Environment variables (Dune recipe)
 
 | Variable | Purpose |
 |----------|---------|
-| `CROSSOVER_BOTTLE` | Bottle name (default: `Dune: Awakening (Steam)`) |
+| `CROSSOVER_BOTTLE` | Bottle name (default: `Dune Awakening (Steam)`) |
 | `DUNE_STRICT_DOCTOR` | Set to `1` to require CrossOver + bottle/BattlEye checks |
 | `DUNE_SKIP_GUI_WAIT` | Set to `1` to skip interactive bottle-create prompt |
 
@@ -134,11 +139,11 @@ Custom CrossOver `.tie` recipes live under [`ties/`](ties/). Install via CrossOv
 |-----|--------|-------|
 | `eso_steam.tie` | `The Elder Scrolls Online (Steam)` | Notes + Mac env; bottle name = Crosstie `<name>` (matches `task eso`) |
 | `eso_standalone.tie` | `The Elder Scrolls Online (Standalone)` | Bethesda.net launcher (non-Steam); shares Mac `live/` AddOns with a Steam bottle |
-| `dune_steam.tie` | `Dune: Awakening (Steam)` | Install notes for Steam + BattlEye tuning (bottle name = Crosstie `<name>`) |
+| `dune_steam.tie` | `Dune Awakening (Steam)` | Install notes for Steam + BattlEye tuning (bottle name = Crosstie `<name>`; CrossOver strips `:`) |
 | `ttc_client.tie` | `The Elder Scrolls Online (Steam)` (existing) | Notes + .NET 4.8 only (not an installer for Client.exe) |
 
 The `task eso` default bottle is `The Elder Scrolls Online (Steam)` (open `ties/eso_steam.tie` for greenfield).
-The `task dune` default bottle is `Dune: Awakening (Steam)` (open `ties/dune_steam.tie` for greenfield).
+The `task dune` default bottle is `Dune Awakening (Steam)` (open `ties/dune_steam.tie` for greenfield; CrossOver strips `:` from bottle names).
 
 ## Layout
 
@@ -178,7 +183,7 @@ tests/
 | `task eso:launch:minion` | Launch native Minion.app (macOS) |
 | `task eso:launch:ttc` | Launch Tamriel Trade Centre Client only |
 | `task eso:fix-ttc-net` | Pin TTC hosts + probe host/Wine DNS (ErrorLog) |
-| `task dune` | Full `Dune: Awakening (Steam)` bottle workflow |
+| `task dune` | Full `Dune Awakening (Steam)` bottle workflow |
 | `task dune:configure` | AVX env + GUI guidance only (no BattlEye fix) |
 | `task dune:doctor` | Strict Dune bottle + BattlEye health check |
 | `task dune:paths` | Resolved game/BattlEye/bottle paths |

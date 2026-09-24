@@ -7,9 +7,10 @@ vars:
   REPO_ROOT:
     sh: cd "{{.TASKFILE_DIR}}/.." && pwd
   CROSSOVER_CLI: "{{.REPO_ROOT}}/bin/crossover"
-  # Recipe default bottle (matches ties/dune_steam.tie <name>). Do not set
+  # Recipe default bottle. CrossOver strips ":" from bottle names, so this is
+  # "Dune Awakening (Steam)" (not "Dune: Awakening …"). Do not set
   # CROSSOVER_BOTTLE at include/file env — it collides with eso.yaml and leaks.
-  DUNE_BOTTLE: "Dune: Awakening (Steam)"
+  DUNE_BOTTLE: "Dune Awakening (Steam)"
 
 tasks:
   setup:

@@ -6,7 +6,8 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   exit 1
 fi
 
-DUNE_DEFAULT_BOTTLE_NAME="${DUNE_DEFAULT_BOTTLE_NAME:-Dune: Awakening (Steam)}"
+# CrossOver strips ":" from bottle names; match the on-disk bottle.
+DUNE_DEFAULT_BOTTLE_NAME="${DUNE_DEFAULT_BOTTLE_NAME:-Dune Awakening (Steam)}"
 DUNE_STEAM_APPID="${DUNE_STEAM_APPID:-1172710}"
 
 dune_bottle_name() {

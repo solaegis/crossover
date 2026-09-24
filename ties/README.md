@@ -8,7 +8,7 @@ Install from the repo copy (CrossOver → **Install a Windows Application** → 
 |------|-------------|---------|
 | [`eso_steam.tie`](eso_steam.tie) | `The Elder Scrolls Online (Steam)` | Notes + Mac env for Steam ESO (bottle name = Crosstie `<name>`) |
 | [`eso_standalone.tie`](eso_standalone.tie) | `The Elder Scrolls Online (Standalone)` | Non-Steam ESO via the Bethesda.net launcher |
-| [`dune_steam.tie`](dune_steam.tie) | `Dune: Awakening (Steam)` | Steam + BattlEye install notes (bottle name = Crosstie `<name>`) |
+| [`dune_steam.tie`](dune_steam.tie) | `Dune Awakening (Steam)` | Steam + BattlEye install notes (bottle name = Crosstie `<name>`; CrossOver strips `:`) |
 | [`ttc_client.tie`](ttc_client.tie) | `The Elder Scrolls Online (Steam)` (existing) | Notes + .NET 4.8 only (Client.exe from Minion; no installer) |
 
 Bottle defaults for `task eso` / `task dune` match these Crosstie `<name>` values.

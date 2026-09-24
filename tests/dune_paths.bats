@@ -7,10 +7,10 @@ setup() {
   export CROSSOVER_PREFIX=""
 }
 
-@test "dune_bottle_name defaults to Dune: Awakening (Steam)" {
+@test "dune_bottle_name defaults to Dune Awakening (Steam)" {
   run dune_bottle_name
   [ "$status" -eq 0 ]
-  [ "$output" = "Dune: Awakening (Steam)" ]
+  [ "$output" = "Dune Awakening (Steam)" ]
 }
 
 @test "dune_steam_exe_path finds steam.exe when present" {
