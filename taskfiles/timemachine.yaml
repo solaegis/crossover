@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+version: "3"
+
+silent: true
+
+vars:
+  REPO_ROOT:
+    sh: cd "{{.TASKFILE_DIR}}/.." && pwd
+
+tasks:
+  exclude:
+    internal: true
+    cmds:
+      - bash "{{.REPO_ROOT}}/scripts/timemachine-exclude-bottles.sh" {{.CLI_ARGS}}
+
+  status:
+    desc: Show Time Machine exclusion status for all CrossOver bottles
+    cmds:
+      - bash "{{.REPO_ROOT}}/scripts/timemachine-exclude-bottles.sh" --status {{.CLI_ARGS}}

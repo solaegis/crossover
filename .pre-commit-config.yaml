@@ -1,0 +1,37 @@
+# Install: uv sync && uv run pre-commit install
+# Run manually: uv run pre-commit run --all-files
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-merge-conflict
+      - id: detect-private-key
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
+
+  - repo: https://github.com/koalaman/shellcheck-precommit
+    rev: v0.11.0
+    hooks:
+      - id: shellcheck
+        files: ^(bin|lib|scripts)/
+
+  - repo: https://github.com/scop/pre-commit-shfmt
+    rev: v3.13.1-1
+    hooks:
+      - id: shfmt
+        args: [-w, -i=2, -ci]
+        files: ^(bin|lib|scripts|tests)/
+
+  - repo: local
+    hooks:
+      - id: bats
+        name: bats (pre-push)
+        entry: bash -c 'command -v bats >/dev/null && bats tests/ || echo "bats not installed; skip pre-push hook"'
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]

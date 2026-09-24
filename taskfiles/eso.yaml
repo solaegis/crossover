@@ -1,0 +1,78 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+version: "3"
+
+silent: true
+
+vars:
+  REPO_ROOT:
+    sh: cd "{{.TASKFILE_DIR}}/.." && pwd
+  CROSSOVER_CLI: "{{.REPO_ROOT}}/bin/crossover"
+  # Recipe default bottle (matches ties/eso_steam.tie <name>). Do not set
+  # CROSSOVER_BOTTLE at include/file env — it collides with dune.yaml and leaks.
+  ESO_BOTTLE: "The Elder Scrolls Online (Steam)"
+
+tasks:
+  setup:
+    desc: Full The Elder Scrolls Online (Steam) bottle setup (Minion, launchers, CrossOver GUI for Steam/ESO)
+    internal: true
+    env:
+      CROSSOVER_BOTTLE: "{{.ESO_BOTTLE}}"
+    cmds:
+      - bash "{{.REPO_ROOT}}/scripts/eso/bottle.sh" {{.CLI_ARGS}}
+
+  doctor:
+    desc: Strict health check for the Elder Scrolls CrossOver bottle
+    env:
+      CROSSOVER_BOTTLE: "{{.ESO_BOTTLE}}"
+      ESO_STRICT_DOCTOR: "1"
+    cmds:
+      - '{{.CROSSOVER_CLI}} eso doctor'
+
+  paths:
+    desc: Show resolved paths for the Elder Scrolls bottle
+    env:
+      CROSSOVER_BOTTLE: "{{.ESO_BOTTLE}}"
+    cmds:
+      - '{{.CROSSOVER_CLI}} eso paths {{.CLI_ARGS}}'
+
+  status:
+    desc: Show bottle process status (eso64 / TTC / steam / wineserver)
+    env:
+      CROSSOVER_BOTTLE: "{{.ESO_BOTTLE}}"
+    cmds:
+      - '{{.CROSSOVER_CLI}} eso status'
+
+  start:
+    desc: Start Steam + TTC (detached); launch ESO from Steam, then task eso:stop
+    env:
+      CROSSOVER_BOTTLE: "{{.ESO_BOTTLE}}"
+    cmds:
+      - '{{.CROSSOVER_CLI}} eso start'
+
+  stop:
+    desc: Clean bottle exit (wineboot end-session, wineserver kill, clear TTC_Lock)
+    env:
+      CROSSOVER_BOTTLE: "{{.ESO_BOTTLE}}"
+    cmds:
+      - '{{.CROSSOVER_CLI}} eso stop {{.CLI_ARGS}}'
+
+  "launch:minion":
+    desc: Launch native Minion.app (macOS)
+    env:
+      CROSSOVER_BOTTLE: "{{.ESO_BOTTLE}}"
+    cmds:
+      - '{{.CROSSOVER_CLI}} eso launch minion'
+
+  "launch:ttc":
+    desc: Launch Tamriel Trade Centre Client only (Steam already running)
+    env:
+      CROSSOVER_BOTTLE: "{{.ESO_BOTTLE}}"
+    cmds:
+      - '{{.CROSSOVER_CLI}} eso launch ttc'
+
+  "fix-ttc-net":
+    desc: Fix TTC Wine/Mono DNS (hosts pin, probes, .NET 4.8 guidance)
+    env:
+      CROSSOVER_BOTTLE: "{{.ESO_BOTTLE}}"
+    cmds:
+      - '{{.CROSSOVER_CLI}} eso fix-ttc-net'

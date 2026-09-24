@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<c4p>
+  <applications>
+    <app appid="com.example.eso.standalone">
+      <cxversion product="cxoffice">26.0</cxversion>
+      <name>The Elder Scrolls Online (Standalone)</name>
+      <appprofile>
+        <description>&lt;p&gt;The standalone (non-Steam) client for The Elder Scrolls Online, installed via the ZeniMax Online / Bethesda.net launcher. The launcher downloads and patches the game itself; this recipe just gets the launcher installed and working.&lt;/p&gt;</description>
+        <comment>20260820 - Rebuilt as a valid c4p CrossTie for CrossOver 26.x. Based on the shipped
+com.codeweavers.c4.11974 profile (cxversion 16.0, win7_64) but retargeted at win10_64 and with the
+Microsoft Edge WebView2 runtime added, which the current launcher UI requires.
+
+20260820 - Do NOT add a Visual C++ 2015/2022 predependency (com.codeweavers.c4.14327). The ESO
+installer's prereq step logs "checkVCRedistVersion: installed: [14.42.34433.0] required:
+[14.38.33135.0] result: [false]" and then skips DOWNLOADING vc_redist.2022.x64.exe - but its
+installVCRedist workflow task still tries to execute that file unconditionally. The result is
+"Platform_ExecuteNormal failed to execute (...vc_redist.2022.x64.exe) [LE: 2]",
+Installer_Error_VCRedist, and a full rollback. Letting the installer supply its own VC++ runtime
+is what makes the install succeed. DirectX is bundled in the installer, so c4.14037 stays out
+too.
+
+20260822 - On macOS, postdependency com.codeweavers.c4.21821 (Enable MSync) and a Mac-only
+installprofile set Steam-matching tuning vars (WINEMSYNC via MSync dep, D3DM_ENABLE_METALFX=0,
+DXMT_ENABLE_NVEXT=0). Bottle Graphics must stay Auto (never bottle-wide DXMT—breaks Bethesda
+launcher WebView2). Daily play uses ESO (skip launcher) with per-shortcut env
+CX_GRAPHICS_BACKEND=dxmt in cxmenu.conf after game install; launcher shortcuts stay on
+Bethesda.net_Launcher.exe for patches only.</comment>
+        <category>Games/Online Games</category>
+        <flag>application</flag>
+        <bottletemplate>win10_64</bottletemplate>
+        <installedfileglob>c:\Program Files (x86)\Zenimax Online\Launcher\Bethesda.net_Launcher.exe</installedfileglob>
+        <downloadurl>http://elderscrolls-a.akamaihd.net/products/BNA_Launcher/Install_ESO.exe</downloadurl>
+        <downloadpageurl>https://www.elderscrollsonline.com/en-us/download</downloadpageurl>
+        <downloadglob>Install_ESO.exe</downloadglob>
+      </appprofile>
+      <installprofile>
+        <installnotes>&lt;p&gt;This installs the ESO launcher only (about 200 MB). The launcher must then be run once to download the game itself, which is roughly 110 GB - make sure the bottle's disk has room.&lt;/p&gt;
+&lt;p&gt;Install into a NEW bottle. If the bottle already has the Visual C++ 2015-2022 runtime, the ESO installer skips downloading its own copy but still tries to run it, and the install rolls back.&lt;/p&gt;
+&lt;p&gt;On macOS (CrossOver 25+), after install set bottle &lt;b&gt;Graphics: Auto&lt;/b&gt; and &lt;b&gt;MSync: ON&lt;/b&gt; (never bottle-wide DXMT—the Bethesda launcher times out on WebView2).&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Play The Elder Scrolls Online&lt;/b&gt; — run the Bethesda launcher to download patches and update the client.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;ESO (skip launcher)&lt;/b&gt; — use for normal play with DXMT. After the game is installed, edit &lt;code&gt;cxmenu.conf&lt;/code&gt; so the skip-launcher entry is &lt;code&gt;Type = raw&lt;/code&gt; with:&lt;br/&gt;
+&lt;code&gt;env CX_GRAPHICS_BACKEND=dxmt "${CX_ROOT}/bin/wine" --bottle "${CX_BOTTLE}" --check --wait-children --workdir "C:\Program Files (x86)\Zenimax Online\The Elder Scrolls Online\game\client" "C:\Program Files (x86)\Zenimax Online\The Elder Scrolls Online\game\client\eso64.exe"&lt;/code&gt;&lt;br/&gt;
+Then run &lt;code&gt;cxmenu --bottle "Elder Scrolls Online (Standalone)" --install&lt;/code&gt;. Reinstalling this tie into an existing bottle does not replace &lt;code&gt;cxmenu.conf&lt;/code&gt;—re-apply the menu block from these notes.&lt;/p&gt;
+&lt;p&gt;If you share &lt;code&gt;live&lt;/code&gt; with a Steam bottle, both installs can use the same &lt;code&gt;UserSettings.txt&lt;/code&gt; once graphics backends match.&lt;/p&gt;</installnotes>
+        <predependency>com.codeweavers.c4.6959</predependency>
+        <predependency>com.codeweavers.c4.7994</predependency>
+        <predependency>com.codeweavers.c4.19373</predependency>
+        <postdependency>com.codeweavers.c4.21821</postdependency>
+        <installerglob>Install_ESO.exe</installerglob>
+        <localinstallerglob>Install_ESO.exe</localinstallerglob>
+        <installerenvironment>
+          <name>WINE_WAIT_CHILD_PIPE_IGNORE</name>
+          <value>Bethesda.net_Launcher.exe</value>
+        </installerenvironment>
+        <lnkfile>
+          <shortcut>%StartMenu%\%Programs%\ESO (skip launcher)</shortcut>
+          <target>c:\Program Files (x86)\Zenimax Online\The Elder Scrolls Online\game\client\eso64.exe</target>
+          <workdir>c:\Program Files (x86)\Zenimax Online\The Elder Scrolls Online\game\client</workdir>
+        </lnkfile>
+      </installprofile>
+      <installprofile>
+        <useif>
+          <equal name="platform">Mac</equal>
+        </useif>
+        <comment>Apple Silicon / macOS: match tuned Steam bottle env (D3DM_ENABLE_METALFX=0, DXMT_ENABLE_NVEXT=0). Set bottle Graphics: Auto after install; DXMT only via ESO (skip launcher) raw cxmenu wrapper (env CX_GRAPHICS_BACKEND=dxmt). Never set CX_GRAPHICS_BACKEND in cxbottle.conf.</comment>
+        <preinstallenvironment>
+          <name>D3DM_ENABLE_METALFX</name>
+          <value>0</value>
+        </preinstallenvironment>
+        <preinstallenvironment>
+          <name>DXMT_ENABLE_NVEXT</name>
+          <value>0</value>
+        </preinstallenvironment>
+        <preinstallenvironment>
+          <name>WINEMSYNC</name>
+          <value>1</value>
+        </preinstallenvironment>
+      </installprofile>
+    </app>
+  </applications>
+</c4p>

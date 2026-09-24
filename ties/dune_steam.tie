@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<c4p>
+  <applications>
+    <app appid="com.solaegis.dune.steam">
+      <cxversion product="cxoffice">26.0</cxversion>
+      <name>Dune: Awakening (Steam)</name>
+      <appprofile>
+        <description>&lt;p&gt;Dune: Awakening via Steam in a dedicated CrossOver bottle. Uses CrossOver's built-in Steam crosstie for installation; this recipe documents post-install tuning for BattlEye and UE5 on Apple Silicon.&lt;/p&gt;</description>
+        <comment>20260825 - Install notes tie for crossover repo task dune workflow. Steam crosstie (com.codeweavers.c4.206) creates the bottle; Bottle name matches this recipe &lt;name&gt;: "Dune: Awakening (Steam)".</comment>
+        <category>Games/Online Games</category>
+        <flag>application</flag>
+        <bottletemplate>win10_64</bottletemplate>
+        <steamid>1172710</steamid>
+      </appprofile>
+      <installprofile>
+        <installnotes>&lt;p&gt;&lt;b&gt;Bottle setup&lt;/b&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Install CrossOver's built-in &lt;b&gt;Steam&lt;/b&gt; crosstie into a new bottle named &lt;b&gt;Dune: Awakening (Steam)&lt;/b&gt; (matches this Crosstie and &lt;code&gt;task dune&lt;/code&gt;).&lt;/li&gt;
+&lt;li&gt;Bottle Settings → &lt;b&gt;Graphics: D3DMetal&lt;/b&gt;, &lt;b&gt;Sync: MSync&lt;/b&gt;.&lt;/li&gt;
+&lt;li&gt;On Apple Silicon: Run with Options → Environment Variables → &lt;b&gt;Advertise AVX capabilities&lt;/b&gt; (or run &lt;code&gt;task dune:configure&lt;/code&gt; from the crossover repo).&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;b&gt;After Steam installs Dune: Awakening&lt;/b&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;From the crossover repo: &lt;code&gt;task dune:fix-battleye&lt;/code&gt; — repairs BattlEye "Updating…" hangs.&lt;/li&gt;
+&lt;li&gt;Launch via &lt;code&gt;task dune:launch:game&lt;/code&gt; (uses DuneSandbox_BE.exe).&lt;/li&gt;
+&lt;li&gt;If BattlEye still hangs: &lt;code&gt;task dune:fix-battleye --full-reset&lt;/code&gt;, then Steam → Verify integrity, re-run fix.&lt;/li&gt;
+&lt;li&gt;Optional: try a VPN during the first BattlEye update, then disconnect.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;b&gt;Limits&lt;/b&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;BattlEye is kernel-level anti-cheat; CrossOver may not pass BE for multiplayer even after user-mode fixes. CodeWeavers rates Dune: Awakening "Installs, Will Not Run".&lt;/li&gt;
+&lt;li&gt;Proton BattlEye Runtime (Steam Tools, App 1161040) is Linux-only — it does not help CrossOver on macOS.&lt;/li&gt;
+&lt;li&gt;Funcom's announced single-player mode may bypass BattlEye (Conan Exiles precedent).&lt;/li&gt;
+&lt;li&gt;Reliable multiplayer fallback: Windows 11 ARM VM (Parallels) with native BattlEye.&lt;/li&gt;
+&lt;/ul&gt;</installnotes>
+        <postdependency>com.codeweavers.c4.21821</postdependency>
+      </installprofile>
+    </app>
+  </applications>
+</c4p>

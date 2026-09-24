@@ -1,0 +1,109 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+version: "3"
+
+silent: true
+
+vars:
+  REPO_ROOT:
+    sh: pwd
+  SHELL_SOURCES: bin lib scripts tests/test_helper.bash
+  TOOLS_DIR: .tools
+
+env:
+  PATH:
+    sh: echo "${PWD}/.tools/bats/bin:${PATH}"
+
+includes:
+  eso:
+    taskfile: ./taskfiles/eso.yaml
+    dir: .
+  dune:
+    taskfile: ./taskfiles/dune.yaml
+    dir: .
+  timemachine:
+    taskfile: ./taskfiles/timemachine.yaml
+    dir: .
+
+tasks:
+  default:
+    desc: List available tasks
+    cmds:
+      - task --list
+
+  eso:
+    desc: Full The Elder Scrolls Online (Steam) bottle setup (Minion, launchers, CrossOver GUI for Steam/ESO)
+    cmds:
+      - task: eso:setup
+        vars:
+          CLI_ARGS: "{{.CLI_ARGS}}"
+
+  dune:
+    desc: "Full Dune: Awakening (Steam) bottle workflow (AVX env, BattlEye fix, CrossOver GUI for Steam/game)"
+    cmds:
+      - task: dune:setup
+        vars:
+          CLI_ARGS: "{{.CLI_ARGS}}"
+
+  timemachine:
+    desc: Exclude all CrossOver bottles from Time Machine backups (macOS tmutil; optional -p via CROSSOVER_TIME_MACHINE_PERSISTENT=1)
+    cmds:
+      - task: timemachine:exclude
+        vars:
+          CLI_ARGS: "{{.CLI_ARGS}}"
+
+  install-bats:
+    desc: Install bats-core into .tools/ when not on PATH
+    cmds:
+      - bash scripts/install-bats.sh
+
+  setup:
+    desc: Install dev dependencies, pre-commit hooks, and bats (if needed)
+    cmds:
+      - uv sync
+      - task: pre-commit:install
+      - bash scripts/install-bats.sh
+
+  format:
+    desc: Format shell sources with shfmt
+    cmds:
+      - shfmt -w -i 2 -ci bin lib scripts tests
+
+  format:check:
+    desc: Check shell formatting without modifying files
+    cmds:
+      - shfmt -d -i 2 -ci bin lib scripts tests
+
+  lint:
+    desc: Run shellcheck on shell sources
+    cmds:
+      - |
+        shellcheck -x bin/crossover lib/*.sh scripts/eso/*.sh scripts/dune/*.sh scripts/timemachine-exclude-bottles.sh tests/test_helper.bash
+
+  test:
+    desc: Run bats test suite
+    deps: [install-bats]
+    cmds:
+      - bats tests/
+
+  check:
+    desc: Run lint, format check, and tests
+    cmds:
+      - task: lint
+      - task: format:check
+      - task: test
+
+  pre-commit:install:
+    desc: Install pre-commit git hooks
+    cmds:
+      - uv run pre-commit install
+      - uv run pre-commit install --hook-type pre-push
+
+  pre-commit:run:
+    desc: Run all pre-commit hooks on the full tree
+    cmds:
+      - uv run pre-commit run --all-files
+
+  clean:
+    desc: Remove local venv, tool installs, and caches
+    cmds:
+      - rm -rf .venv .tools .pytest_cache .mypy_cache

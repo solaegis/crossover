@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<c4p>
+  <applications>
+    <app appid="com.solaegis.eso.ttc">
+      <cxversion product="cxoffice">26.0</cxversion>
+      <name>Tamriel Trade Centre Client</name>
+      <appprofile>
+        <description>&lt;p&gt;Setup notes for Tamriel Trade Centre (TTC) in the existing &lt;b&gt;The Elder Scrolls Online (Steam)&lt;/b&gt; bottle. Client.exe ships inside the TamrielTradeCentre addon (Minion → Mac &lt;code&gt;live/AddOns&lt;/code&gt;). This Crosstie does &lt;b&gt;not&lt;/b&gt; download Client.exe — it only installs Microsoft .NET Framework 4.8 into the bottle for Wine/Mono HTTPS reliability.&lt;/p&gt;</description>
+        <comment>20260924 - Notes + .NET 4.8 predependency only (com.codeweavers.c4.16255). Do NOT set installedfileglob/installerglob/lnkfile: opening the .tie would otherwise treat the .tie path as the installer ("unknown installer type"). Menus/launch: crossover eso launch ttc; network: crossover eso fix-ttc-net. Install into existing The Elder Scrolls Online (Steam) bottle — do not create a new bottle.
+
+20260924 - Fixed installer failure: removed installedfileglob/lnkfile that caused CrossOver to run the .tie file as the installer.</comment>
+        <category>Games/Online Games</category>
+        <flag>application</flag>
+        <bottletemplate>win10_64</bottletemplate>
+      </appprofile>
+      <installprofile>
+        <installnotes>&lt;p&gt;&lt;b&gt;Cancel Installation&lt;/b&gt; if CrossOver says the &lt;code&gt;.tie&lt;/code&gt; is an unknown installer type — that means an older recipe tried to run the Crosstie file itself as an installer. Use this updated recipe (notes + .NET 4.8 only).&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Important:&lt;/b&gt; install into your existing &lt;b&gt;The Elder Scrolls Online (Steam)&lt;/b&gt; bottle — do not create a new bottle.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Prerequisites&lt;/b&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Steam + ESO already in the &lt;b&gt;The Elder Scrolls Online (Steam)&lt;/b&gt; bottle.&lt;/li&gt;
+&lt;li&gt;TamrielTradeCentre addon installed via Minion into Mac &lt;code&gt;~/Documents/Elder Scrolls Online/live/AddOns/&lt;/code&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;b&gt;What this Crosstie installs&lt;/b&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Microsoft .NET Framework 4.8 into the bottle (Wine/Mono HTTP to tamrieltradecentre.com).&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;b&gt;After this Crosstie&lt;/b&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;crossover eso fix-ttc-net&lt;/code&gt; (or &lt;code&gt;task eso:fix-ttc-net&lt;/code&gt;) — pin TTC hosts, probe DNS, clear TTC_Lock.&lt;/li&gt;
+&lt;li&gt;Launch: &lt;code&gt;crossover eso launch ttc&lt;/code&gt; or Mac helper &lt;b&gt;Tamriel Trade Centre Client&lt;/b&gt;.&lt;/li&gt;
+&lt;li&gt;Clean exit: &lt;code&gt;crossover eso quit&lt;/code&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;If you only need .NET 4.8: CrossOver → Install a Windows Application → search &lt;b&gt;Microsoft .NET Framework 4.8&lt;/b&gt; → bottle &lt;b&gt;The Elder Scrolls Online (Steam)&lt;/b&gt;.&lt;/p&gt;</installnotes>
+        <predependency>com.codeweavers.c4.16255</predependency>
+      </installprofile>
+    </app>
+  </applications>
+</c4p>

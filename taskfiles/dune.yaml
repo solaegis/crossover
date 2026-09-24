@@ -1,0 +1,71 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+version: "3"
+
+silent: true
+
+vars:
+  REPO_ROOT:
+    sh: cd "{{.TASKFILE_DIR}}/.." && pwd
+  CROSSOVER_CLI: "{{.REPO_ROOT}}/bin/crossover"
+  # Recipe default bottle (matches ties/dune_steam.tie <name>). Do not set
+  # CROSSOVER_BOTTLE at include/file env — it collides with eso.yaml and leaks.
+  DUNE_BOTTLE: "Dune: Awakening (Steam)"
+
+tasks:
+  setup:
+    desc: "Full Dune: Awakening (Steam) bottle workflow (configure + BattlEye fix + doctor)"
+    internal: true
+    env:
+      CROSSOVER_BOTTLE: "{{.DUNE_BOTTLE}}"
+    cmds:
+      - bash "{{.REPO_ROOT}}/scripts/dune/bottle.sh" {{.CLI_ARGS}}
+
+  configure:
+    desc: Configure Dune bottle (AVX env, GUI guidance) without BattlEye fix
+    env:
+      CROSSOVER_BOTTLE: "{{.DUNE_BOTTLE}}"
+    cmds:
+      - '{{.CROSSOVER_CLI}} dune setup {{.CLI_ARGS}}'
+
+  doctor:
+    desc: Strict health check for the Dune Awakening CrossOver bottle
+    env:
+      CROSSOVER_BOTTLE: "{{.DUNE_BOTTLE}}"
+      DUNE_STRICT_DOCTOR: "1"
+    cmds:
+      - '{{.CROSSOVER_CLI}} dune doctor'
+
+  paths:
+    desc: Show resolved paths for the Dune Awakening bottle
+    env:
+      CROSSOVER_BOTTLE: "{{.DUNE_BOTTLE}}"
+    cmds:
+      - '{{.CROSSOVER_CLI}} dune paths {{.CLI_ARGS}}'
+
+  fix-battleye:
+    desc: Reset BattlEye cache, reinstall service, and start BEService
+    env:
+      CROSSOVER_BOTTLE: "{{.DUNE_BOTTLE}}"
+    cmds:
+      - '{{.CROSSOVER_CLI}} dune fix-battleye {{.CLI_ARGS}}'
+
+  verify-steam:
+    desc: Launch Steam integrity verify for Dune (after --full-reset)
+    env:
+      CROSSOVER_BOTTLE: "{{.DUNE_BOTTLE}}"
+    cmds:
+      - '{{.CROSSOVER_CLI}} dune verify-steam'
+
+  "launch:steam":
+    desc: Launch Steam in the Dune Awakening bottle
+    env:
+      CROSSOVER_BOTTLE: "{{.DUNE_BOTTLE}}"
+    cmds:
+      - '{{.CROSSOVER_CLI}} dune launch steam'
+
+  "launch:game":
+    desc: Launch Dune via BattlEye wrapper (DuneSandbox_BE.exe)
+    env:
+      CROSSOVER_BOTTLE: "{{.DUNE_BOTTLE}}"
+    cmds:
+      - '{{.CROSSOVER_CLI}} dune launch game'

@@ -1,0 +1,56 @@
+name: ci
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: check (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Install Python dev dependencies
+        run: uv sync
+
+      - name: Install go-task
+        run: |
+          if [[ "${{ runner.os }}" == "macOS" ]]; then
+            brew install go-task
+          else
+            sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
+          fi
+
+      - name: Install shellcheck and shfmt
+        run: |
+          if [[ "${{ runner.os }}" == "macOS" ]]; then
+            brew install shellcheck shfmt bats-core
+          else
+            sudo apt-get update
+            sudo apt-get install -y shellcheck shfmt bats
+          fi
+
+      - name: Pre-commit
+        run: uv run pre-commit run --all-files
+
+      - name: Run task check
+        run: task check

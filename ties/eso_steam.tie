@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<c4p>
+  <applications>
+    <app appid="com.solaegis.eso.steam">
+      <cxversion product="cxoffice">26.0</cxversion>
+      <name>The Elder Scrolls Online (Steam)</name>
+      <appprofile>
+        <description>&lt;p&gt;The Elder Scrolls Online via Steam in the &lt;b&gt;The Elder Scrolls Online (Steam)&lt;/b&gt; CrossOver bottle. Uses CrossOver's built-in Steam crosstie for installation; this recipe documents greenfield bottle naming, graphics/sync tuning, shared Mac Documents, and TTC follow-up.&lt;/p&gt;</description>
+        <comment>20260924 - Greenfield notes + Mac env tie for crossover repo task eso workflow. Steam crosstie (com.codeweavers.c4.206) creates the bottle; Bottle name matches this recipe &lt;name&gt;: "The Elder Scrolls Online (Steam)". steamid 306130. Do NOT set installerglob/installedfileglob/lnkfile (unknown installer type). Do NOT set CX_GRAPHICS_BACKEND in cxbottle.conf — use bottle Settings Graphics=DXMT.
+
+20260924 - Mac preinstallenvironment matches live Steam ESO bottle: WINEMSYNC=1, D3DM_ENABLE_METALFX=0, DXMT_ENABLE_NVEXT=0. postdependency com.codeweavers.c4.21821 Enable MSync.</comment>
+        <category>Games/Online Games</category>
+        <flag>application</flag>
+        <bottletemplate>win10_64</bottletemplate>
+        <steamid>306130</steamid>
+      </appprofile>
+      <installprofile>
+        <installnotes>&lt;p&gt;&lt;b&gt;Greenfield bottle setup&lt;/b&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Open this Crosstie (or CrossOver → Install a Windows Application → this .tie). CrossOver creates bottle &lt;b&gt;The Elder Scrolls Online (Steam)&lt;/b&gt;. If you instead use built-in &lt;b&gt;Steam&lt;/b&gt;, &lt;b&gt;Edit&lt;/b&gt; the bottle name to match.&lt;/li&gt;
+&lt;li&gt;On the install screen, click &lt;b&gt;Edit&lt;/b&gt; and leave/set the bottle name to &lt;b&gt;The Elder Scrolls Online (Steam)&lt;/b&gt; (matches this Crosstie and &lt;code&gt;task eso&lt;/code&gt;).&lt;/li&gt;
+&lt;li&gt;Install Steam, then in Steam install The Elder Scrolls Online (AppID &lt;b&gt;306130&lt;/b&gt;) and run it once.&lt;/li&gt;
+&lt;li&gt;Bottle Settings → &lt;b&gt;Graphics: DXMT&lt;/b&gt;, &lt;b&gt;Sync: MSync&lt;/b&gt;. Do not put &lt;code&gt;CX_GRAPHICS_BACKEND&lt;/code&gt; in &lt;code&gt;cxbottle.conf&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;Turn &lt;b&gt;High Resolution Mode&lt;/b&gt; (Retina) &lt;b&gt;off&lt;/b&gt; — prefer logical ultrawide (e.g. 5120×1440) so FullscreenWidth/Height are not doubled.&lt;/li&gt;
+&lt;li&gt;Keep bottle Documents linked to Mac &lt;code&gt;~/Documents&lt;/code&gt; so Minion and &lt;code&gt;live/AddOns&lt;/code&gt; are shared; do not invent a second AddOns tree.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;b&gt;After the game works&lt;/b&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Open &lt;code&gt;ties/ttc_client.tie&lt;/code&gt; into the same &lt;b&gt;The Elder Scrolls Online (Steam)&lt;/b&gt; bottle (.NET 4.8 only).&lt;/li&gt;
+&lt;li&gt;Then: &lt;code&gt;crossover eso fix-ttc-net&lt;/code&gt; → &lt;code&gt;crossover eso launch ttc&lt;/code&gt; / &lt;code&gt;crossover eso quit&lt;/code&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;b&gt;Day-to-day&lt;/b&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;task eso&lt;/code&gt; / &lt;code&gt;crossover eso doctor&lt;/code&gt; / &lt;code&gt;crossover eso launch steam&lt;/code&gt;.&lt;/li&gt;
+&lt;/ul&gt;</installnotes>
+        <postdependency>com.codeweavers.c4.21821</postdependency>
+      </installprofile>
+      <installprofile>
+        <useif>
+          <equal name="platform">Mac</equal>
+        </useif>
+        <comment>Apple Silicon / macOS: match live Steam ESO bottle env. Set bottle Graphics: DXMT in GUI after Steam install; never set CX_GRAPHICS_BACKEND in cxbottle.conf.</comment>
+        <preinstallenvironment>
+          <name>D3DM_ENABLE_METALFX</name>
+          <value>0</value>
+        </preinstallenvironment>
+        <preinstallenvironment>
+          <name>DXMT_ENABLE_NVEXT</name>
+          <value>0</value>
+        </preinstallenvironment>
+        <preinstallenvironment>
+          <name>WINEMSYNC</name>
+          <value>1</value>
+        </preinstallenvironment>
+      </installprofile>
+    </app>
+  </applications>
+</c4p>

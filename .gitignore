@@ -1,0 +1,22 @@
+# Python / uv (pre-commit only)
+.venv/
+venv/
+
+# Local tool installs
+.tools/
+
+# Cursor / Claude session state
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+*.swp
+*.swo
+*~
+
+# Caches
+.pytest_cache/
+.mypy_cache/

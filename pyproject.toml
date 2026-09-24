@@ -1,0 +1,12 @@
+name = "crossover"
+version = "0.1.0"
+description = "Bash scripts for CrossOver bottles on macOS"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "SolAegis" }]
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.0.0",
+]
