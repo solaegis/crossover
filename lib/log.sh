@@ -18,10 +18,11 @@ log_color_enabled() {
 
 # Remove --no-color from argv; sets CROSSOVER_NO_COLOR=1 when seen.
 # Usage: log_filter_argv outvar "$@"
+# Bash 3.2-safe (no nameref): assigns into the named array via eval + printf %q.
 log_filter_argv() {
-  local -n _out=$1
+  local __out_var=$1
   shift
-  _out=()
+  local -a __filtered=()
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --no-color)
@@ -29,11 +30,17 @@ log_filter_argv() {
         shift
         ;;
       *)
-        _out+=("$1")
+        __filtered+=("$1")
         shift
         ;;
     esac
   done
+  if ((${#__filtered[@]})); then
+    # shellcheck disable=SC2086 # intentional: %q-quoted words become array elements
+    eval "$__out_var"'=(' "$(printf '%q ' "${__filtered[@]}")" ')'
+  else
+    eval "$__out_var"'=()'
+  fi
 }
 
 log_colors() {
@@ -126,7 +133,8 @@ log_prompt_yn_default_y() {
   if ! read -r reply </dev/tty; then
     return 1
   fi
-  case "${reply,,}" in
+  reply=$(printf '%s' "$reply" | tr '[:upper:]' '[:lower:]')
+  case "$reply" in
     n | no) return 1 ;;
     *) return 0 ;;
   esac
