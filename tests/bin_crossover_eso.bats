@@ -71,6 +71,7 @@ setup() {
   [[ "$output" == *"eso start"* ]]
   [[ "$output" == *"eso stop"* ]]
   [[ "$output" == *"launch ttc"* ]]
+  [[ "$output" == *"launch game"* ]]
   [[ "$output" == *"--no-color"* ]]
   [[ "$output" == *"CROSSOVER_NO_COLOR"* ]]
 }
@@ -112,10 +113,13 @@ setup() {
     crossover_wine_bin() { printf "/bin/true\n"; }
     crossover_wineboot_end() { return 0; }
     crossover_wineserver_kill() { return 0; }
+    crossover_bottle_kill_host_procs() { return 0; }
+    crossover_taskkill() { return 0; }
     crossover_bottle_process_lines() { return 0; }
     crossover_wineserver_running() { return 1; }
     eso_awake_off() { return 0; }
     export -f crossover_wine_bin crossover_wineboot_end crossover_wineserver_kill
+    export -f crossover_bottle_kill_host_procs crossover_taskkill
     export -f crossover_bottle_process_lines crossover_wineserver_running eso_awake_off
     eso_quit
   '
@@ -129,35 +133,42 @@ setup() {
   [ "$status" -eq 2 ]
 }
 
-@test "crossover eso start launches steam and ttc detached with mocked wine" {
+@test "crossover eso start launches steam with -applaunch and ttc detached" {
   local mac="${BATS_TEST_TMPDIR}/mac/AddOns"
   local bottle_root="${BATS_TEST_TMPDIR}/Library/Application Support/CrossOver/Bottles/Elder Scrolls"
   local open_log="${BATS_TEST_TMPDIR}/open.log"
+  local wine_log="${BATS_TEST_TMPDIR}/wine.log"
   mkdir -p "${mac}/TamrielTradeCentre/Client" "${bottle_root}/drive_c/Program Files (x86)/Steam"
   mkdir -p "${BATS_TEST_TMPDIR}/Applications/CrossOver/Tamriel Trade Centre Client.app"
   : >"${mac}/TamrielTradeCentre/Client/Client.exe"
   : >"${bottle_root}/drive_c/Program Files (x86)/Steam/steam.exe"
+  : >"$wine_log"
   export ESO_MAC_ADDONS="${mac}"
   export HOME="${BATS_TEST_TMPDIR}"
   export CROSSOVER_BOTTLE="Elder Scrolls"
 
-  run env CROSSOVER_BOTTLE="Elder Scrolls" ESO_MAC_ADDONS="${mac}" HOME="${BATS_TEST_TMPDIR}" OPEN_LOG="${open_log}" bash -c '
+  run env CROSSOVER_BOTTLE="Elder Scrolls" ESO_MAC_ADDONS="${mac}" HOME="${BATS_TEST_TMPDIR}" \
+    OPEN_LOG="${open_log}" WINE_LOG="${wine_log}" bash -c '
     source "'"${REPO_ROOT}"'/lib/common.sh"
     source "'"${REPO_ROOT}"'/lib/log.sh"
     source "'"${REPO_ROOT}"'/lib/crossover.sh"
     source "'"${REPO_ROOT}"'/lib/eso_paths.sh"
     source "'"${REPO_ROOT}"'/lib/eso_runtime.sh"
-    crossover_wine_bin() { printf "/bin/true\n"; }
+    crossover_wine_bin() { printf "%s\n" "/bin/true"; }
     eso_awake_on() { return 0; }
     open() { printf "%s\n" "$*" >>"${OPEN_LOG}"; }
-    export -f crossover_wine_bin eso_awake_on open
+    # Record wine argv synchronously (eso_start backgrounds nohup … &).
+    nohup() { printf "%s\n" "$*" >>"${WINE_LOG}"; }
+    disown() { return 0; }
+    export -f crossover_wine_bin eso_awake_on open nohup disown
     eso_start
   '
   [ "$status" -eq 0 ]
   [[ "$output" == *"eso start"* ]]
-  [[ "$output" == *"Steam + TTC started"* ]]
+  [[ "$output" == *"Steam + ESO + TTC started"* ]] || [[ "$output" == *"-applaunch"* ]]
   [[ "$output" == *"Mac helper"* ]] || [[ "$output" == *"Tamriel Trade Centre"* ]]
-  # Darwin uses `open -a` for the Mac helper; Linux takes the detached-wine path.
+  grep -q -- '-applaunch' "$wine_log"
+  grep -q -- '306130' "$wine_log"
   if [[ "$(uname -s)" == "Darwin" ]]; then
     [[ -s "$open_log" ]]
   else

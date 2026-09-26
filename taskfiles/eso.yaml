@@ -43,7 +43,7 @@ tasks:
       - '{{.CROSSOVER_CLI}} eso status'
 
   start:
-    desc: Start Steam + TTC (detached); launch ESO from Steam, then task eso:stop
+    desc: Start Steam + ESO (-applaunch) + TTC detached; then task eso:stop when done
     env:
       CROSSOVER_BOTTLE: "{{.ESO_BOTTLE}}"
     cmds:
@@ -62,6 +62,13 @@ tasks:
       CROSSOVER_BOTTLE: "{{.ESO_BOTTLE}}"
     cmds:
       - '{{.CROSSOVER_CLI}} eso launch minion'
+
+  "launch:game":
+    desc: Launch ESO via Steam -applaunch (Steam may already be running)
+    env:
+      CROSSOVER_BOTTLE: "{{.ESO_BOTTLE}}"
+    cmds:
+      - '{{.CROSSOVER_CLI}} eso launch game'
 
   "launch:ttc":
     desc: Launch Tamriel Trade Centre Client only (Steam already running)

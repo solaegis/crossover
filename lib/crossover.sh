@@ -125,8 +125,33 @@ crossover_wineboot_end() {
 }
 
 # Hard-kill the bottle wineserver (stops all Wine processes in the bottle).
+# CrossOver wineserver: -k[n] sends signal n. Use plain -k (default SIGINT).
+# Do NOT use -k0 — signal 0 is an existence check and does not terminate.
 crossover_wineserver_kill() {
-  crossover_run_wine --ux-app wineserver -k0
+  crossover_run_wine --ux-app wineserver -k
+}
+
+# SIGTERM then SIGKILL any host processes whose argv still references this bottle.
+# Fallback after wineserver -k for orphaned winewrapper hosts (PPID 1).
+crossover_bottle_kill_host_procs() {
+  local lines pid
+  local round
+
+  for round in term kill; do
+    lines="$(crossover_bottle_process_lines 2>/dev/null || true)"
+    if [[ -z "$lines" ]]; then
+      return 0
+    fi
+    while read -r pid _; do
+      [[ "$pid" =~ ^[0-9]+$ ]] || continue
+      if [[ "$round" == term ]]; then
+        kill -TERM "$pid" 2>/dev/null || true
+      else
+        kill -KILL "$pid" 2>/dev/null || true
+      fi
+    done <<<"$lines"
+    sleep 1
+  done
 }
 
 # Force-kill a Windows image name inside the bottle (e.g. eso64.exe). Best-effort.
@@ -135,29 +160,138 @@ crossover_taskkill() {
   crossover_run_wine taskkill.exe /F /IM "$image" >/dev/null 2>&1 || true
 }
 
-# Print process command lines that reference this bottle's path (macOS/Linux ps).
+# Prefer /bin/ps so interactive shells that alias ps=procs do not break discovery.
+crossover_ps_bin() {
+  if [[ -x /bin/ps ]]; then
+    printf '%s\n' /bin/ps
+    return 0
+  fi
+  command -v ps
+}
+
+# Narrow Wine/ESO/Steam images for expensive lsof -p association.
+# Exclude steamwebhelper (many CEF children); steam is counted via steam.exe / winewrapper.
+crossover_bottle_wine_candidate_re() {
+  printf '%s' 'eso64|steam\.exe|Client\.exe|winewrapper|Bethesda\.net_Launcher|TamrielTradeCentre'
+}
+
+# True if PID has an open file/dir under bottle_root (PE processes lack WINEPREFIX in ps eww).
+crossover_pid_lsof_has_bottle() {
+  local pid="${1:?pid required}"
+  local bottle_root="${2:?bottle_root required}"
+  local out
+  command -v lsof >/dev/null 2>&1 || return 1
+  # Capture with timeout. Use bash substring match — do not pipe to grep -q under
+  # pipefail (early grep close SIGPIPEs the writer and the check looks like failure).
+  if command -v perl >/dev/null 2>&1; then
+    out="$(perl -e 'alarm 2; exec @ARGV' lsof -p "$pid" 2>/dev/null || true)"
+  else
+    out="$(lsof -p "$pid" 2>/dev/null || true)"
+  fi
+  [[ -n "$out" && "$out" == *"$bottle_root"* ]]
+}
+
+# PIDs that currently have bottle_root open (fast path for wineserver).
+crossover_bottle_lsof_pids() {
+  local bottle_root="${1:?bottle_root required}"
+  command -v lsof >/dev/null 2>&1 || return 0
+  # -F p emits "pPID" lines for processes using this path.
+  lsof -F p -- "$bottle_root" 2>/dev/null | sed -n 's/^p//p' | sort -u || true
+}
+
+crossover_bottle_emit_ps_line() {
+  local pid="${1:?}"
+  local cmd="${2:?}"
+  printf '%s %s\n' "$pid" "$cmd"
+}
+
+# Print bottle-scoped process lines: "PID command".
+# Bulk-filters ps output, then associates Windows-argv PE processes via timed lsof -p.
 crossover_bottle_process_lines() {
-  local bottle_root needle
+  local bottle_root ps_bin line pid cmd seen_pids="" re lsof_pid all
   if ! bottle_root="$(crossover_bottle_root_dir 2>/dev/null)"; then
     return 1
   fi
-  needle="$bottle_root"
-  if ! command -v ps >/dev/null 2>&1; then
+  if ! ps_bin="$(crossover_ps_bin)"; then
     return 1
   fi
-  # shellcheck disable=SC2009
-  ps -axo pid=,command= 2>/dev/null | grep -F "$needle" | grep -v grep || true
+  re="$(crossover_bottle_wine_candidate_re)"
+  all="$("$ps_bin" -axo pid=,command= 2>/dev/null || true)"
+  [[ -z "$all" ]] && return 0
+
+  # 1) argv contains Mac bottle path (winewrapper hosts, etc.)
+  while IFS= read -r line; do
+    [[ -z "$line" ]] && continue
+    line="${line#"${line%%[![:space:]]*}"}"
+    pid="${line%% *}"
+    cmd="${line#"$pid"}"
+    cmd="${cmd#"${cmd%%[![:space:]]*}"}"
+    [[ "$pid" =~ ^[0-9]+$ ]] || continue
+    case " ${seen_pids} " in
+      *" ${pid} "*) continue ;;
+    esac
+    seen_pids+=" ${pid}"
+    crossover_bottle_emit_ps_line "$pid" "$cmd"
+  done < <(printf '%s\n' "$all" | grep -F -- "$bottle_root" || true)
+
+  # 2) PIDs holding bottle_root open (lone wineserver)
+  while IFS= read -r lsof_pid; do
+    [[ "$lsof_pid" =~ ^[0-9]+$ ]] || continue
+    case " ${seen_pids} " in
+      *" ${lsof_pid} "*) continue ;;
+    esac
+    line="$(printf '%s\n' "$all" | grep -E "^[[:space:]]*${lsof_pid}[[:space:]]" | head -1 || true)"
+    [[ -z "$line" ]] && continue
+    line="${line#"${line%%[![:space:]]*}"}"
+    cmd="${line#"$lsof_pid"}"
+    cmd="${cmd#"${cmd%%[![:space:]]*}"}"
+    seen_pids+=" ${lsof_pid}"
+    crossover_bottle_emit_ps_line "$lsof_pid" "$cmd"
+  done < <(crossover_bottle_lsof_pids "$bottle_root")
+
+  # 3) Narrow PE/winewrapper candidates: associate via open files under bottle_root.
+  # CrossOver PE processes often have empty WINEPREFIX in ps eww; lsof sees drive_c paths.
+  # Skip steamwebhelper (argv often embeds steampath=...steam.exe and would false-hit the re).
+  while IFS= read -r line; do
+    [[ -z "$line" ]] && continue
+    line="${line#"${line%%[![:space:]]*}"}"
+    pid="${line%% *}"
+    cmd="${line#"$pid"}"
+    cmd="${cmd#"${cmd%%[![:space:]]*}"}"
+    [[ "$pid" =~ ^[0-9]+$ ]] || continue
+    case " ${seen_pids} " in
+      *" ${pid} "*) continue ;;
+    esac
+    if printf '%s\n' "$cmd" | grep -Fq -- "$bottle_root"; then
+      continue
+    fi
+    if crossover_pid_lsof_has_bottle "$pid" "$bottle_root"; then
+      seen_pids+=" ${pid}"
+      crossover_bottle_emit_ps_line "$pid" "$cmd"
+    fi
+  done < <(printf '%s\n' "$all" | grep -iE -- "$re" | grep -vi 'steamwebhelper' || true)
 }
 
 crossover_wineserver_running() {
-  local lines
+  local lines bottle_root ps_bin pid cmd
   lines="$(crossover_bottle_process_lines 2>/dev/null || true)"
-  if [[ -z "$lines" ]]; then
+  if [[ -n "$lines" ]]; then
+    return 0
+  fi
+  if ! bottle_root="$(crossover_bottle_root_dir 2>/dev/null)"; then
     return 1
   fi
-  printf '%s\n' "$lines" | grep -qi 'wineserver' && return 0
-  # Any bottle-scoped wine process implies the server is up.
-  return 0
+  if ! ps_bin="$(crossover_ps_bin)"; then
+    return 1
+  fi
+  while IFS= read -r pid; do
+    [[ "$pid" =~ ^[0-9]+$ ]] || continue
+    cmd="$("$ps_bin" -p "$pid" -o command= 2>/dev/null || true)"
+    if printf '%s\n' "$cmd" | grep -qi -- 'wineserver'; then
+      return 0
+    fi
+  done < <(crossover_bottle_lsof_pids "$bottle_root")
+  return 1
 }
 
 # Path to the bottle's Windows hosts file (drive_c/windows/system32/drivers/etc/hosts).

@@ -32,12 +32,13 @@ Usage:
   crossover [--no-color] eso doctor             ESO: health check
   crossover [--no-color] eso status             ESO: bottle process status (eso64/TTC/steam)
   crossover [--no-color] eso quit [--keep-steam] ESO: clean bottle exit (wineboot + wineserver)
-  crossover [--no-color] eso start               ESO: start Steam + TTC (detached play session)
+  crossover [--no-color] eso start               ESO: start Steam + ESO + TTC (detached play session)
   crossover [--no-color] eso stop [--keep-steam]  ESO: alias for quit (clean bottle exit)
   crossover [--no-color] eso fix-ttc-net         ESO: TTC host/Wine DNS fix (hosts pin + probes)
   crossover [--no-color] eso setup [--skip-launchers] [--skip-gui-wait]
                                    ESO: Minion + launchers; GUI steps for Steam/ESO
   crossover [--no-color] eso launch steam         ESO: launch Steam in the bottle
+  crossover [--no-color] eso launch game          ESO: launch ESO via Steam -applaunch
   crossover [--no-color] eso launch minion        ESO: launch native Minion.app (macOS)
   crossover [--no-color] eso launch ttc           ESO: launch Tamriel Trade Centre Client
   crossover [--no-color] dune paths [--json]      Dune: bottle/game/BattlEye paths
@@ -93,6 +94,9 @@ eso_cmd_launch() {
     steam)
       eso_launch_steam "$@"
       ;;
+    game)
+      eso_launch_game "$@"
+      ;;
     minion)
       eso_launch_minion "$@"
       ;;
@@ -100,7 +104,7 @@ eso_cmd_launch() {
       eso_launch_ttc "$@"
       ;;
     *)
-      log_error "unknown launch target: ${target:-<missing>} (use steam, minion, or ttc)"
+      log_error "unknown launch target: ${target:-<missing>} (use steam, game, minion, or ttc)"
       return 2
       ;;
   esac

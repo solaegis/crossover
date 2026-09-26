@@ -15,7 +15,7 @@ task lint          # shellcheck
 task format        # shfmt
 task test          # bats suite
 task eso           # full The Elder Scrolls Online (Steam) bottle setup
-task eso:start     # Steam + TTC detached; launch ESO from Steam
+task eso:start     # Steam + ESO (-applaunch) + TTC detached
 task eso:stop      # clean bottle exit (ESO + TTC + wineserver)
 task eso:status    # bottle process status
 task dune          # full Dune: Awakening (Steam) bottle workflow

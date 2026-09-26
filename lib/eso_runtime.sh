@@ -103,6 +103,23 @@ eso_launch_steam() {
   eso_run "$(eso_steam_cx_app)"
 }
 
+# Launch ESO via Steam (AppID); Steam starts if needed.
+eso_launch_game() {
+  local wine cx_app
+  eso_ensure_bottle_env
+  if ! crossover_bottle_exists; then
+    log_error "Bottle not found: ${CROSSOVER_BOTTLE}"
+    return 1
+  fi
+  if ! wine="$(crossover_wine_bin)"; then
+    log_error "CrossOver wine binary not found (install CrossOver or set CROSSOVER_ROOT)"
+    return 1
+  fi
+  cx_app="$(eso_steam_cx_app)"
+  log_info "Launching ESO via Steam -applaunch ${ESO_STEAM_APPID} (bottle ${CROSSOVER_BOTTLE})"
+  "$wine" --bottle "${CROSSOVER_BOTTLE}" --cx-app "$cx_app" -applaunch "${ESO_STEAM_APPID}"
+}
+
 eso_launch_minion() {
   eso_ensure_bottle_env
   if [[ "$(uname -s)" != "Darwin" ]]; then
@@ -188,7 +205,7 @@ eso_launch_ttc() {
     "${ESO_TTC_WIN_EXE}" "$@"
 }
 
-# Detached Steam + TTC for a play session (returns immediately; use eso_stop / eso quit to exit).
+# Detached Steam (-applaunch ESO) + TTC for a play session (returns immediately; use eso_stop / eso quit to exit).
 eso_start() {
   local wine cx_app exe helper
   eso_ensure_bottle_env
@@ -210,9 +227,11 @@ eso_start() {
   log_info "=== eso start (bottle: ${CROSSOVER_BOTTLE}) ==="
   eso_awake_on
 
-  # nohup + redirect: Task/shell exit must not SIGHUP Steam/TTC children.
-  log_info "Launching Steam (detached)"
+  # nohup + redirect: Task/shell exit must not SIGHUP Steam/ESO/TTC children.
+  # -applaunch starts Steam if needed, then launches ESO (AppID).
+  log_info "Launching Steam + ESO (detached, -applaunch ${ESO_STEAM_APPID})"
   nohup "$wine" --bottle "${CROSSOVER_BOTTLE}" --cx-app "$cx_app" \
+    -applaunch "${ESO_STEAM_APPID}" \
     </dev/null >/dev/null 2>&1 &
   disown 2>/dev/null || true
 
@@ -230,7 +249,7 @@ eso_start() {
     disown 2>/dev/null || true
   fi
 
-  log_info "Steam + TTC started — launch ESO from Steam, then: task eso:stop"
+  log_info "Steam + ESO + TTC started — when done: task eso:stop"
   log_info "Status: task eso:status"
 }
 
@@ -241,7 +260,11 @@ eso_stop() {
 eso_status_match_count() {
   local pattern="${1:?pattern required}"
   local lines
-  lines="$(crossover_bottle_process_lines 2>/dev/null || true)"
+  if [[ $# -ge 2 ]]; then
+    lines="$2"
+  else
+    lines="$(crossover_bottle_process_lines 2>/dev/null || true)"
+  fi
   if [[ -z "$lines" ]]; then
     printf '0\n'
     return 0
@@ -262,9 +285,10 @@ eso_status_print() {
   fi
 
   lines="$(crossover_bottle_process_lines 2>/dev/null || true)"
-  eso_n="$(eso_status_match_count 'eso64')"
-  ttc_n="$(eso_status_match_count 'Client\.exe|TamrielTradeCentre|/Client')"
-  steam_n="$(eso_status_match_count 'steam\.exe|Steam')"
+  eso_n="$(eso_status_match_count 'eso64' "$lines")"
+  # Bottle-scoped lines only; prefer TamrielTradeCentre path, else Client.exe in this bottle.
+  ttc_n="$(eso_status_match_count 'TamrielTradeCentre|Client\.exe' "$lines")"
+  steam_n="$(eso_status_match_count 'steam\.exe|steamwebhelper' "$lines")"
   wine_n=0
   if [[ -n "$lines" ]]; then
     wine_n="$(printf '%s\n' "$lines" | wc -l | tr -d ' ')"
@@ -274,7 +298,7 @@ eso_status_print() {
   printf '%-20s %s\n' "ttc_client" "$ttc_n"
   printf '%-20s %s\n' "steam" "$steam_n"
   printf '%-20s %s\n' "bottle_procs" "$wine_n"
-  if crossover_wineserver_running 2>/dev/null; then
+  if [[ -n "$lines" ]] || crossover_wineserver_running 2>/dev/null; then
     printf '%-20s %s\n' "wineserver" "running"
   else
     printf '%-20s %s\n' "wineserver" "idle"
@@ -313,12 +337,23 @@ eso_quit_game_only() {
 eso_quit_full() {
   log_info "Ending Windows session for bottle ${CROSSOVER_BOTTLE}"
   if crossover_wine_bin >/dev/null 2>&1 && crossover_bottle_exists; then
+    # Ask known images to exit while wineserver is still up (Steam CEF orphans
+    # otherwise linger with Windows-only argv and evade bottle-path status).
+    crossover_taskkill "eso64.exe"
+    crossover_taskkill "Client.exe"
+    crossover_taskkill "steam.exe"
+    crossover_taskkill "steamwebhelper.exe"
+    crossover_taskkill "Bethesda.net_Launcher.exe"
     crossover_wineboot_end >/dev/null 2>&1 || true
     sleep 1
+    # Always wineserver -k: a lone wineserver has no bottle path in argv, so
+    # eso_status_is_busy can be false while the server is still running.
+    log_info "Killing wineserver for bottle ${CROSSOVER_BOTTLE}"
+    crossover_wineserver_kill >/dev/null 2>&1 || true
+    sleep 1
     if eso_status_is_busy; then
-      log_warn "Processes still running; killing wineserver"
-      crossover_wineserver_kill >/dev/null 2>&1 || true
-      sleep 1
+      log_warn "Bottle processes remain; sending host SIGTERM/SIGKILL"
+      crossover_bottle_kill_host_procs >/dev/null 2>&1 || true
     fi
   else
     log_warn "CrossOver/bottle unavailable; skipping wineboot/wineserver"

@@ -49,8 +49,11 @@ export -f \
   crossover_run_wine \
   crossover_wineboot_end \
   crossover_wineserver_kill \
+  crossover_bottle_kill_host_procs \
   crossover_taskkill \
   crossover_bottle_process_lines \
+  crossover_ps_bin \
+  crossover_pid_lsof_has_bottle \
   crossover_wineserver_running \
   crossover_bottle_hosts_path \
   crossover_hosts_apply_block \
@@ -90,6 +93,7 @@ export -f \
   eso_awake_on \
   eso_awake_off \
   eso_launch_ttc \
+  eso_launch_game \
   eso_ttc_hosts_apply \
   eso_ttc_hosts_present \
   eso_ttc_hosts_body \

@@ -36,6 +36,7 @@ bin/crossover eso paths
 bin/crossover eso doctor
 bin/crossover eso setup
 bin/crossover eso launch steam
+bin/crossover eso launch game
 bin/crossover eso status
 bin/crossover eso quit
 bin/crossover eso launch ttc
@@ -177,8 +178,8 @@ tests/
 | `task eso` | Full `The Elder Scrolls Online (Steam)` bottle workflow |
 | `task eso:doctor` | Strict ESO bottle health check |
 | `task eso:paths` | Resolved Mac/Windows/bottle paths |
-| `task eso:status` | Bottle process status (eso64 / TTC / steam) |
-| `task eso:start` | Start Steam + TTC (detached); launch ESO from Steam |
+| `task eso:status` | Bottle process status (eso64 / TTC / steam; argv + lsof-scoped) |
+| `task eso:start` | Start Steam + ESO (`-applaunch 306130`) + TTC (detached) |
 | `task eso:stop` | Clean bottle exit (`-- --keep-steam` for softer quit) |
 | `task eso:launch:minion` | Launch native Minion.app (macOS) |
 | `task eso:launch:ttc` | Launch Tamriel Trade Centre Client only |
